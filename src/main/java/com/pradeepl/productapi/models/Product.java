@@ -46,4 +46,12 @@ public class Product {
     public void setPrice(double price) {
         this.price = price;
     }
+
+    // Record class
+    public record ProductRecord(int id, String name, double price) {}
+
+    // Method to convert Product to ProductRecord
+    public ProductRecord toRecord() {
+        return new ProductRecord(this.id, this.name, this.price);
+    }
 }

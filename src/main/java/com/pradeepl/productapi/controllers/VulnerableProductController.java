@@ -1,6 +1,8 @@
 package com.pradeepl.productapi.controllers;
 
 import com.pradeepl.productapi.models.Product;
+import com.pradeepl.productapi.models.Product.ProductRecord;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,6 +43,20 @@ public class VulnerableProductController {
 
         } catch (SQLException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    @PostMapping("/products/vulnerable") // New endpoint for demonstration
+    public ResponseEntity<String> testProduct(@RequestBody ProductRecord productRecord) {
+        switch (productRecord) {
+            case ProductRecord(int id, String name, double price) 
+                when name.contains("<script>") -> { // Vulnerable: potential injection
+                // This part is vulnerable since 'name' is not sanitized
+                return ResponseEntity.ok("Processing product: " + name); 
+            }
+            default -> {
+                return ResponseEntity.ok("Product processed.");
+            }
         }
     }
 }
