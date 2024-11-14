@@ -28,11 +28,7 @@ public class VulnerableProductController {
 
     @Autowired
     private DataSource dataSource; // Inject the DataSource
-    // Define a fixed thread pool with a limited number of threads
-    //private final ExecutorService executor = Executors.newFixedThreadPool(10);
-     // Executor with unlimited thread pool size (potential DoS vulnerability)
-     private final ExecutorService executor = Executors.newCachedThreadPool();
-
+        
     @GetMapping("/products/vulnerable/{name}")
     public ResponseEntity<List<Product>> getProductsByName(@PathVariable String name) {
         try (Connection connection = dataSource.getConnection();
@@ -53,29 +49,30 @@ public class VulnerableProductController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-//#region JEP440
-    //the vuln CWE-79 is not identified in this method but is identified in the one below it
+//#region JEP440 - Record pattern
+    
     @PostMapping("/products/vulnerable440")
     public ResponseEntity<String> testProduct21(@RequestBody ProductRecord productRecord) {
-        switch (productRecord) {
-            case ProductRecord(int id, String name, double price) -> {
-                // Vulnerable: potential injection
-                // This part is vulnerable since 'name' is not sanitized
-                return ResponseEntity.ok("Processing product: " + name); 
-            }
-            default -> {
-                return ResponseEntity.ok("Product processed.");
-            }
-        }
+        return switch (productRecord) {
+            case ProductRecord(int id, String name, double price) -> ResponseEntity.ok("<p>Processing product: " + name + " with price " + price + "</p>");
+            case null -> ResponseEntity.badRequest().body("Product record is null");
+            default -> ResponseEntity.ok("Product processed.");
+        };
     }
 
     @PostMapping("/products/vulnerabletest") // New endpoint for demonstration
     public ResponseEntity<String> testProduct17(@RequestBody ProductRecord productRecord) {
-        return ResponseEntity.ok("Processing product: " + productRecord.name()); 
+        int id = productRecord.id();  
+        String name = productRecord.name();
+        double price = productRecord.price(); 
+    
+        // VULNERABILITY: Cross-Site Scripting (XSS)
+        return ResponseEntity.ok("<p>Processing product: " + name + "</p>"); 
     }
+    
 //#endregion
 
-//#region JEP-430
+//#region JEP-430 - string interpolation pattern discontinued
     @PostMapping("/products/vulnerable430")
     public ResponseEntity<String> testProduct430(@RequestBody ProductRecord productRecord) {
         // Assuming JEP 430 String Templates with SQL-like query construction
@@ -87,7 +84,7 @@ public class VulnerableProductController {
     }
 //#endregion
 
-//#region JEP-431
+//#region JEP-431 - sequenced collections
 
     @PostMapping("/products/processProducts")
     public ResponseEntity<String> processProducts(@RequestBody List<ProductRecord> productRecords) {
@@ -109,6 +106,7 @@ public class VulnerableProductController {
     }
 
     //JEP-431 -  This feature adds a collection that maintains a defined order for retrieval in both directions (from start to end and vice versa).
+    // We are able to identify a vuln with unsanitised input event after processing input through sequences
     @PostMapping("/products/sequencedCollectionExample")
     public ResponseEntity<String> processProducts21(@RequestBody List<ProductRecord> productRecords) {
         
@@ -149,8 +147,7 @@ public class VulnerableProductController {
     public ResponseEntity<String> processProductsVirtThread(@RequestBody List<ProductRecord> productRecords) {
         
         // Creating a virtual thread executor
-        var executor = Executors.newVirtualThreadPerTaskExecutor();
-        
+        var executor = Executors.newVirtualThreadPerTaskExecutor();        
         StringBuilder response = new StringBuilder("Processing products concurrently using virtual threads:<br>");
         
         try {
@@ -166,7 +163,7 @@ public class VulnerableProductController {
         } catch (Exception e) {
             return ResponseEntity.status(500).body("Error processing products: " + e.getMessage());
         } finally {
-            executor.shutdown(); // Always shut down the executor
+            //executor.shutdown(); // Always shut down the executor
         }
 
         return ResponseEntity.ok(response.toString());
@@ -184,6 +181,11 @@ public class VulnerableProductController {
     @PostMapping("/products/regularThreadsExample")
     public ResponseEntity<String> processProductsRegThread(@RequestBody List<ProductRecord> productRecords) {
         
+        // Define a fixed thread pool with a limited number of threads
+        //private final ExecutorService executor = Executors.newFixedThreadPool(10);
+        // Executor with unlimited thread pool size (potential DoS vulnerability)
+        //susceptible to resource exhaustion by allowing uncontrolled thread creation
+        ExecutorService executor = Executors.newCachedThreadPool();
         StringBuilder response = new StringBuilder("Processing products concurrently using regular threads:<br>");
 
         try {
@@ -203,17 +205,16 @@ public class VulnerableProductController {
             // Log error without exposing details to the client
             e.printStackTrace();
             return ResponseEntity.status(500).body("An error occurred while processing the request.");
+        } finally {
+            // executor.shutdown();
         }
-
         return ResponseEntity.ok(response.toString());
     }
 
     // Helper method to simulate product processing
-    private String processProductRegularThread(ProductRecord productRecord) {
-        // Simulate some processing for each product
-        return "Product ID: " + productRecord.id() +
-               ", Name: " + productRecord.name() +
-               ", Price: " + productRecord.price();
+    private String processProductRegularThread(ProductRecord productRecord) {       
+        return "Product ID: " + productRecord.id() + ", Name: " + productRecord.name() + ", Price: " + productRecord.price();
+
     }
 //#endregion
 
