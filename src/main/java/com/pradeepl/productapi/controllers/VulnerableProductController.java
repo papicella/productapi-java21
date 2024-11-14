@@ -50,8 +50,8 @@ public class VulnerableProductController {
     @PostMapping("/products/vulnerable") // New endpoint for demonstration
     public ResponseEntity<String> testProduct21(@RequestBody ProductRecord productRecord) {
         switch (productRecord) {
-            case ProductRecord(int id, String name, double price) 
-                when name.contains("<script>") -> { // Vulnerable: potential injection
+            case ProductRecord(int id, String name, double price) -> {
+                // Vulnerable: potential injection
                 // This part is vulnerable since 'name' is not sanitized
                 return ResponseEntity.ok("Processing product: " + name); 
             }
