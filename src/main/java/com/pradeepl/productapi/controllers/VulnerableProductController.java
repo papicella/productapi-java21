@@ -45,9 +45,10 @@ public class VulnerableProductController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
-
+//#region vulnerable code
+    //the vuln is not identified in this method but is identified in the one below it
     @PostMapping("/products/vulnerable") // New endpoint for demonstration
-    public ResponseEntity<String> testProduct(@RequestBody ProductRecord productRecord) {
+    public ResponseEntity<String> testProduct21(@RequestBody ProductRecord productRecord) {
         switch (productRecord) {
             case ProductRecord(int id, String name, double price) 
                 when name.contains("<script>") -> { // Vulnerable: potential injection
@@ -59,4 +60,10 @@ public class VulnerableProductController {
             }
         }
     }
+
+    @PostMapping("/products/vulnerabletest") // New endpoint for demonstration
+    public ResponseEntity<String> testProduct17(@RequestBody ProductRecord productRecord) {
+        return ResponseEntity.ok("Processing product: " + productRecord.name()); 
+    }
+//#endregion
 }
