@@ -109,12 +109,13 @@ public class VulnerableProductController {
     // We are able to identify a vuln with unsanitised input event after processing input through sequences
     @PostMapping("/products/sequencedCollectionExample")
     public ResponseEntity<String> processProducts21(@RequestBody List<ProductRecord> productRecords) {
-        
+
+
         // Using a SequencedCollection to process items in defined order
         SequencedCollection<ProductRecord> sequencedProducts = List.copyOf(productRecords);
-        
+
         StringBuilder response = new StringBuilder("Processing products in order:\n");
-        
+
         // Process each product in forward order
         sequencedProducts.forEach(productRecord -> 
             response.append("Product ID: ")
@@ -137,7 +138,7 @@ public class VulnerableProductController {
                     .append(productRecord.price())
                     .append("\n")
         );
-        
+
         return ResponseEntity.ok(response.toString());
     }
 //#endregion
@@ -149,7 +150,7 @@ public class VulnerableProductController {
         // Creating a virtual thread executor
         var executor = Executors.newVirtualThreadPerTaskExecutor();        
         StringBuilder response = new StringBuilder("Processing products concurrently using virtual threads:<br>");
-        
+
         try {
             // Use virtual threads to process each product concurrently
             List<Future<String>> futures = productRecords.stream()
