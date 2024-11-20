@@ -82,7 +82,7 @@ public class VulnerableProductController {
         
         return ResponseEntity.ok("Generated query: " + sqlQuery);
     }
-//#endregion
+//#endregion 
 
 //#region JEP-431 - sequenced collections
 
@@ -218,6 +218,37 @@ public class VulnerableProductController {
     }
 //#endregion
 
+//#region JEP440
 
+    @PostMapping("/test/switch/vulnerable17")
+    public ResponseEntity<String> testSwitchPatternMatching17(@RequestBody ProductRecord productRecord) {
+        if (productRecord == null) {
+            return ResponseEntity.badRequest().body("Invalid product record");
+        }
 
+        // Extract fields manually
+        int id = productRecord.id();
+        String name = productRecord.name();
+        double price = productRecord.price();
+
+        // VULNERABILITY: Directly embedding user input into SQL query
+        String sqlQuery = "SELECT * FROM products WHERE name = '" + name + "' AND price = " + price;
+
+        return ResponseEntity.ok("Generated query: " + sqlQuery);
+    }
+
+    @PostMapping("/test/switch/vulnerable")
+    public ResponseEntity<String> testSwitchPatternMatching(@RequestBody ProductRecord productRecord) {
+        // Switch pattern matching
+        return switch (productRecord) {
+            case ProductRecord(int id, String name, double price) -> {
+                // VULNERABILITY: Directly embedding user input into SQL query
+                String sqlQuery = "SELECT * FROM products WHERE name = '" + name + "' AND price = " + price;
+                yield ResponseEntity.ok("Generated query: " + sqlQuery);
+            }
+            default -> ResponseEntity.badRequest().body("Invalid product record");
+        };
+}
+
+//#endregion
 }
